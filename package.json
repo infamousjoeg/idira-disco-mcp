@@ -1,0 +1,55 @@
+{
+  "name": "idira-disco-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for the Idira (CyberArk) Discovery & Context GraphQL API: query, ingest and delete secrets, machine identities (workloads) and AI agents. OAuth 2.1 protected resource, ready for the Idira Agent Identity Broker.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "idira-disco-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "schema"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
+    "schema:check": "node scripts/check-schema.mjs",
+    "demo": "npm run build && tsx scripts/demo.ts"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "idira",
+    "cyberark",
+    "discovery-context",
+    "oauth2.1",
+    "machine-identity"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/express": "^2.0.2",
+    "@modelcontextprotocol/node": "^2.1.1",
+    "@modelcontextprotocol/server": "^2.3.0",
+    "express": "^5.2.1",
+    "jose": "^6.2.12",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.3.0",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.4",
+    "@vitest/coverage-v8": "^5.0.3",
+    "graphql": "^17.0.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}

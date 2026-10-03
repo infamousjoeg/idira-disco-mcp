@@ -1,0 +1,828 @@
+# =============================================================================
+# PUBLIC GraphQL Schema
+# =============================================================================
+
+
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+"""
+Root query type for retrieving data from the DiscoveryContext system.
+All queries support filtering and pagination where applicable.
+
+"""
+
+type Query {
+
+  """
+  Query secrets with optional filtering, pagination, and sorting.
+  Returns a paginated list of secrets matching the filter criteria.
+  Use filters to search by provider, type, risk, name, or other attributes.
+  Use sort to order results by a specific field (defaults to id ascending).
+
+  """
+  secrets(filter: SecretsFilterInput, pageInput: PageInput, sort: [SecretsSortInput]): SecretsPage!
+
+  """
+  Query workloads with optional filtering, pagination, and sorting.
+  Returns a paginated list of workloads matching the filter criteria.
+  Use filters to search by provider, type, name, or other attributes.
+  Use sort to order results by a specific field (defaults to id ascending).
+
+  """
+  workloads(filter: WorkloadsFilterInput, pageInput: PageInput, sort: [WorkloadsSortInput]): WorkloadPage!
+
+  """
+  Query AI agents with optional filtering, pagination, and sorting.
+  Returns a paginated list of AI agents matching the filter criteria.
+  Use filters to search by provider, type, name, risk, or other attributes.
+  Use sort to order results by a specific field (defaults to id ascending).
+
+  """
+  aiAgents(filter: AiAgentsFilterInput, pageInput: PageInput, sort: [AiAgentsSortInput]): AiAgentPage!
+}
+
+"""
+Root mutation type for modifying data in the DiscoveryContext system.
+All mutations are idempotent and support bulk operations.
+
+"""
+
+type Mutation {
+
+  """
+  Add or replace secrets from an external data source.
+  Creates new secrets or updates existing ones based on originId.
+  Returns the processed secrets and total count.
+  Use this to synchronize secrets from external systems.
+
+  """
+  addReplaceExternalSecrets(secrets: [SecretInput!]!): AddReplaceSecretsResponse!
+
+  """
+  Add or replace workloads from an external data source.
+  Creates new workloads or updates existing ones based on originId.
+  Returns the processed workloads and total count.
+  Use this to synchronize workloads from external systems.
+
+  """
+  addReplaceExternalWorkloads(workloads: [WorkloadInput!]!): AddReplaceWorkloadsResponse!
+
+  """
+  Add or replace AI agents from an external data source.
+  Creates new AI agents or updates existing ones based on originId.
+  Returns the processed AI agents and total count.
+  Use this to synchronize AI agents from external systems.
+
+  """
+  addReplaceExternalAiAgents(aiAgents: [AiAgentInput!]!): AddReplaceAiAgentsResponse!
+
+  """
+  Delete secrets matching the filter criteria.
+  Permanently removes secrets from the system.
+  Returns the count of deleted secrets.
+  Use with caution - deletion is irreversible.
+
+  """
+  deleteExternalSecrets(filter: SecretsFilterInput!): DeleteSecretsResponse!
+
+  """
+  Delete workloads matching the filter criteria.
+  Permanently removes workloads from the system.
+  Returns the count of deleted workloads.
+  Use with caution - deletion is irreversible.
+
+  """
+  deleteExternalWorkloads(filter: WorkloadsFilterInput!): DeleteResponse!
+
+  """
+  Delete AI agents matching the filter criteria.
+  Permanently removes AI agents from the system.
+  Returns the count of deleted AI agents.
+  Use with caution - deletion is irreversible.
+
+  """
+  deleteExternalAiAgents(filter: AiAgentsFilterInput!): DeleteResponse!
+}
+
+scalar AWSDateTime
+
+scalar AWSJSON
+
+"""
+Classification type for tags, annotations, and labels.
+Used to categorize metadata associated with secrets, workloads, and AI agents.
+
+"""
+
+enum TagType {
+  "Standard tag for categorization and filtering"
+  TAG
+  "Annotation providing additional context or notes"
+  ANNOTATION
+  "Label for identification and organization"
+  LABEL
+}
+
+"""
+Indicates whether a secret value changes over time or remains static.
+Helps determine appropriate caching and refresh strategies.
+
+"""
+
+enum SecretPermanence {
+  "Secret value changes dynamically and should be refreshed periodically"
+  DYNAMIC
+  "Secret value remains static until explicitly updated"
+  STATIC
+}
+
+"""
+Source system or integration that provides the data.
+Identifies the origin of secrets, workloads, or AI agents in the system.
+
+"""
+
+enum DataSourceType {
+  "CyberArk Secrets Hub integration"
+  SECRETS_HUB
+  "External API integration"
+  EXTERNAL_API
+  "CyberArk Conjur integration"
+  CONJUR
+  "Certificate Manager for Kubernetes agent"
+  KUBERNETES_DISCOVERY_AGENT
+  "SAI (Service Account Intelligence) integration"
+  SAI
+  "AWS cloud scanner integration"
+  AWS_SCANNER
+  "Azure cloud scanner integration"
+  AZURE_SCANNER
+  "CyberArk SMS integration"
+  SECRETS_MANAGER_SAAS
+}
+
+"""Sort order direction for query results."""
+
+enum SortOrder {
+  "Ascending order (A-Z, 0-9, oldest to newest)"
+  ASC
+  "Descending order (Z-A, 9-0, newest to oldest)"
+  DESC
+}
+
+"""
+Input for creating or updating a tag entry.
+Used to attach metadata to secrets, workloads, or AI agents.
+
+"""
+
+input TagEntryInput {
+  "Type of tag (tag, annotation, or label)"
+  type: TagType!
+  "Tag key/name"
+  key: String!
+  "Optional tag value"
+  value: String
+}
+
+"""
+Input for creating or updating a secret.
+Represents a credential, certificate, token, or key from an external data source.
+
+"""
+
+input SecretInput {
+  "Unique identifier from the source system"
+  originId: String!
+  "Provider identifier within the source system"
+  providerId: String!
+  "Type of provider system (e.g., 'aws', 'azure', 'kubernetes')"
+  providerType: String!
+  "Display name of the secret"
+  name: String!
+  "Category of secret (Secret, Certificate, Token, Key)"
+  type: String
+  "Optional subtype for further classification"
+  subType: String
+  "Geographic or logical location of the secret"
+  location: String
+  "Human-readable description of the secret"
+  description: String
+  "Start date/time when the secret becomes valid"
+  validityFrom: AWSDateTime
+  "End date/time when the secret expires"
+  validityTo: AWSDateTime
+  "Associated username if applicable"
+  username: String
+  "Array of tags, annotations, and labels"
+  tags: [TagEntryInput]
+  "Last time the secret was retrieved from the source system"
+  originLastRetrieved: AWSDateTime
+  "Additional metadata as JSON"
+  additionalData: AWSJSON
+  "Last update timestamp from the source system"
+  originUpdatedAt: AWSDateTime
+  "Whether the secret value changes dynamically"
+  permanence: SecretPermanence
+  "Secret value (use with caution, consider security implications)"
+  secretValue: String
+  "Creation timestamp from the source system"
+  originCreatedAt: AWSDateTime
+}
+
+"""
+Filter criteria for querying secrets.
+Supports complex boolean logic with AND, OR, and NOT operators.
+
+"""
+
+input SecretsFilterInput {
+  "Filter by exact secret ID match"
+  id: StringEqualsFilter
+  "Filter by exact provider ID match"
+  providerId: StringEqualsFilter
+  "Filter by exact provider type match"
+  providerType: StringEqualsFilter
+  "Filter by origin update timestamp"
+  originUpdatedAt: DateFilter
+  "Filter by origin ID containing substring"
+  originId: StringContainsFilter
+  "Filter by exact risk ID match"
+  riskId: StringEqualsFilter
+  "Filter by name containing substring"
+  name: StringContainsFilter
+  "Filter by store name containing substring"
+  storeName: StringContainsFilter
+  "Filter by secret type"
+  type: StringEqualsFilter
+  "Filter by data source type"
+  dataSourceType: DataSourceTypeFilter
+  "Logical AND: all conditions must match"
+  and: [SecretsFilterInput]
+  "Logical OR: any condition must match"
+  or: [SecretsFilterInput]
+  "Logical NOT: negate the filter condition"
+  not: SecretsFilterInput
+}
+
+"""Filter for exact string equality matching."""
+
+input StringEqualsFilter {
+  "Value to match exactly"
+  eq: String
+}
+
+"""Filter for substring matching within strings."""
+
+input StringContainsFilter {
+  "Substring to search for"
+  contains: String
+}
+
+"""Filter for date/time range comparisons."""
+
+input DateFilter {
+  "Less than: filter for dates before this value"
+  lt: AWSDateTime
+  "Greater than: filter for dates after this value"
+  gt: AWSDateTime
+}
+
+"""Filter for data source type matching."""
+
+input DataSourceTypeFilter {
+  "Data source type to match"
+  eq: DataSourceType
+}
+
+"""
+Filter criteria for querying workloads.
+Supports complex boolean logic with AND, OR, and NOT operators.
+
+"""
+
+input WorkloadsFilterInput {
+  "Filter by exact workload ID match"
+  id: StringEqualsFilter
+  "Filter by exact provider ID match"
+  providerId: StringEqualsFilter
+  "Filter by exact provider type match"
+  providerType: StringEqualsFilter
+  "Filter by origin update timestamp"
+  originUpdatedAt: DateFilter
+  "Filter by origin ID containing substring"
+  originId: StringContainsFilter
+  "Filter by name containing substring"
+  name: StringContainsFilter
+  "Filter by exact workload type match"
+  type: StringEqualsFilter
+  "Filter by data source type"
+  dataSourceType: DataSourceTypeFilter
+  "Filter by exact risk ID match"
+  riskId: StringEqualsFilter
+  "Logical AND: all conditions must match"
+  and: [WorkloadsFilterInput]
+  "Logical OR: any condition must match"
+  or: [WorkloadsFilterInput]
+  "Logical NOT: negate the filter condition"
+  not: WorkloadsFilterInput
+}
+
+"""
+Input for creating or updating a workload.
+Represents an application, service, or compute resource that may access secrets.
+
+"""
+
+input WorkloadInput {
+  "Unique identifier from the source system"
+  originId: String!
+  "Provider identifier within the source system"
+  providerId: String!
+  "Type of provider system (e.g., 'aws', 'azure', 'kubernetes')"
+  providerType: String!
+  "Display name of the workload"
+  name: String!
+  "Type/category of workload (e.g., 'container', 'serverless', 'vm')"
+  type: String
+  "Optional subtype for further classification"
+  subType: String
+  "Human-readable description of the workload"
+  description: String
+  "Geographic or logical location of the workload"
+  location: String
+  "Array of tags, annotations, and labels"
+  tags: [TagEntryInput]
+  "Additional metadata as JSON"
+  additionalData: AWSJSON
+  "Last update timestamp from the source system"
+  originUpdatedAt: AWSDateTime
+  "Creation timestamp from the source system"
+  originCreatedAt: AWSDateTime
+}
+
+"""
+Filter criteria for querying AI agents.
+Supports complex boolean logic with AND, OR, and NOT operators.
+
+"""
+
+input AiAgentsFilterInput {
+  "Filter by exact AI agent ID match"
+  id: StringEqualsFilter
+  "Filter by exact provider ID match"
+  providerId: StringEqualsFilter
+  "Filter by exact provider type match"
+  providerType: StringEqualsFilter
+  "Filter by origin update timestamp"
+  originUpdatedAt: DateFilter
+  "Filter by origin ID containing substring"
+  originId: StringContainsFilter
+  "Filter by exact risk ID match"
+  riskId: StringEqualsFilter
+  "Filter by name containing substring"
+  name: StringContainsFilter
+  "Filter by exact AI agent type match"
+  type: StringEqualsFilter
+  "Filter by data source type"
+  dataSourceType: DataSourceTypeFilter
+  "Logical AND: all conditions must match"
+  and: [AiAgentsFilterInput]
+  "Logical OR: any condition must match"
+  or: [AiAgentsFilterInput]
+  "Logical NOT: negate the filter condition"
+  not: AiAgentsFilterInput
+}
+
+"""
+Input for creating or updating an AI agent.
+Represents an AI/ML agent or model that may access secrets or pose security risks.
+
+"""
+
+input AiAgentInput {
+  "Unique identifier from the source system"
+  originId: String!
+  "Provider identifier within the source system"
+  providerId: String!
+  "Type of provider system (e.g., 'aws', 'azure', 'kubernetes')"
+  providerType: String!
+  "Display name of the AI agent"
+  name: String!
+  "Type/category of AI agent (e.g., 'llm', 'chatbot', 'automation')"
+  type: String
+  "Optional subtype for further classification"
+  subType: String
+  "Human-readable description of the AI agent"
+  description: String
+  "Instructions or prompt used by the AI agent"
+  instructions: String
+  "Model name or identifier (e.g., 'gpt-4', 'claude-3')"
+  model: String
+  "Geographic or logical location of the AI agent"
+  location: String
+  "Array of tags, annotations, and labels"
+  tags: [TagEntryInput]
+  "Additional metadata as JSON"
+  additionalData: AWSJSON
+  "Last update timestamp from the source system"
+  originUpdatedAt: AWSDateTime
+  "Creation timestamp from the source system"
+  originCreatedAt: AWSDateTime
+}
+
+"""
+Pagination parameters for querying large result sets.
+Used to limit the number of results and navigate through pages.
+
+"""
+
+input PageInput {
+  "Maximum number of items to return in this page"
+  limit: Int
+  "Number of items to skip before returning results (for pagination)"
+  offset: Int
+}
+
+"""
+Sorting configuration for secrets queries.
+Specifies which field to sort by and the sort order direction.
+Exactly one field must be provided in each sort input.
+
+"""
+
+input SecretsSortInput {
+  "Sort by secret ID"
+  id: SortOrder
+  "Sort by secret name"
+  name: SortOrder
+  "Sort by origin ID"
+  originId: SortOrder
+  "Sort by provider ID"
+  providerId: SortOrder
+  "Sort by provider type"
+  providerType: SortOrder
+  "Sort by secret type"
+  type: SortOrder
+  "Sort by location"
+  location: SortOrder
+  "Sort by origin updated timestamp"
+  originUpdatedAt: SortOrder
+  "Sort by origin created timestamp"
+  originCreatedAt: SortOrder
+  "Sort by system updated timestamp"
+  updatedAt: SortOrder
+  "Sort by validity start date"
+  validityFrom: SortOrder
+  "Sort by validity end date"
+  validityTo: SortOrder
+  "Sort by username"
+  username: SortOrder
+}
+
+"""
+Sorting configuration for workloads queries.
+Specifies which field to sort by and the sort order direction.
+Exactly one field must be provided in each sort input.
+
+"""
+
+input WorkloadsSortInput {
+  "Sort by workload ID"
+  id: SortOrder
+  "Sort by name"
+  name: SortOrder
+  "Sort by origin ID"
+  originId: SortOrder
+  "Sort by provider ID"
+  providerId: SortOrder
+  "Sort by provider type"
+  providerType: SortOrder
+  "Sort by type"
+  type: SortOrder
+  "Sort by location"
+  location: SortOrder
+  "Sort by origin updated timestamp"
+  originUpdatedAt: SortOrder
+  "Sort by origin created timestamp"
+  originCreatedAt: SortOrder
+  "Sort by system updated timestamp"
+  updatedAt: SortOrder
+}
+
+"""
+Sorting configuration for AI agents queries.
+Specifies which field to sort by and the sort order direction.
+AI agents use the same sortable fields as workloads.
+Exactly one field must be provided in each sort input.
+
+"""
+
+input AiAgentsSortInput {
+  "Sort by AI agent ID"
+  id: SortOrder
+  "Sort by name"
+  name: SortOrder
+  "Sort by origin ID"
+  originId: SortOrder
+  "Sort by provider ID"
+  providerId: SortOrder
+  "Sort by provider type"
+  providerType: SortOrder
+  "Sort by type"
+  type: SortOrder
+  "Sort by location"
+  location: SortOrder
+  "Sort by origin updated timestamp"
+  originUpdatedAt: SortOrder
+  "Sort by origin created timestamp"
+  originCreatedAt: SortOrder
+  "Sort by system updated timestamp"
+  updatedAt: SortOrder
+}
+
+"Interface of Entity"
+
+interface Entity {
+  "The ID of the Entity"
+  id: String!
+  "Display Name of the Entity"
+  name: String!
+  "ID of the entity in the origin"
+  originId: String!
+  "Source system or integration that provided this secret"
+  dataSourceType: DataSourceType
+  "Provider identifier within the source system"
+  providerId: String!
+  "Type of provider system (e.g., 'aws', 'azure', 'kubernetes')"
+  providerType: String!
+  "Geographic or logical location of the entity"
+  location: String
+  "The type of the Entity (not EntityType)"
+  type: String
+  "Human-readable description of the Entity"
+  description: String
+  "Array of tags, annotations, and labels"
+  tags: [TagEntry]
+  "Last update timestamp from the source system"
+  originUpdatedAt: AWSDateTime
+  "Last update timestamp in the system"
+  updatedAt: AWSDateTime
+  "Creation timestamp from the source system"
+  originCreatedAt: AWSDateTime
+}
+
+"""
+Tag, annotation, or label attached to an entity.
+Used for categorization, filtering, and metadata management.
+
+"""
+
+type TagEntry {
+  "Type of tag (tag, annotation, or label)"
+  type: TagType!
+  "Tag key/name"
+  key: String!
+  "Optional tag value"
+  value: String
+}
+
+"""
+Secret credential, certificate, token, or key managed by the system.
+Represents sensitive data that may be accessed by workloads or AI agents.
+
+"""
+
+type Secret implements Entity {
+  "Source system or integration that provided this secret"
+  dataSourceType: DataSourceType!
+  "Unique identifier assigned by the system"
+  id: String!
+  "Unique identifier from the source system"
+  originId: String!
+  "Display name of the secret"
+  name: String!
+  "Provider identifier within the source system"
+  providerId: String!
+  "Category of secret (Secret, Certificate, Token, Key)"
+  type: String
+  "Optional subtype for further classification"
+  subType: String
+  "Human-readable description of the secret"
+  description: String
+  "Start date/time when the secret becomes valid"
+  validityFrom: AWSDateTime
+  "End date/time when the secret expires"
+  validityTo: AWSDateTime
+  "Associated username if applicable"
+  username: String
+  "Array of tags, annotations, and labels"
+  tags: [TagEntry]
+  "Last time the secret was retrieved from the source system"
+  originLastRetrieved: AWSDateTime
+  "Additional metadata as JSON"
+  additionalData: AWSJSON
+  "Last update timestamp from the source system"
+  originUpdatedAt: AWSDateTime
+  "Type of provider system (e.g., 'aws', 'azure', 'kubernetes')"
+  providerType: String!
+  "Geographic or logical location of the secret"
+  location: String
+  "Whether the secret meets compliance requirements"
+  compliance: Boolean
+  "Whether the secret is managed by CyberArk"
+  managedByCyberArk: Boolean
+  "Last update timestamp in the system"
+  updatedAt: AWSDateTime
+  "Whether the secret value changes dynamically"
+  permanence: SecretPermanence
+  "Creation timestamp from the source system"
+  originCreatedAt: AWSDateTime
+}
+
+"""
+Response from adding or replacing secrets.
+Contains the processed secrets and a count of total items processed.
+
+"""
+
+type AddReplaceSecretsResponse {
+  "Array of secrets that were added or updated"
+  secrets: [Secret!]!
+  "Total number of secrets processed in the operation"
+  totalProcessedSecrets: Int!
+}
+
+"""
+Response from deleting secrets.
+Contains the count of successfully deleted items.
+
+"""
+
+type DeleteSecretsResponse {
+  "Total number of secrets deleted"
+  totalDeleted: Int!
+}
+
+"""
+Generic delete operation response.
+Contains the count of successfully deleted items.
+
+"""
+
+type DeleteResponse {
+  "Total number of items deleted"
+  totalDeleted: Int!
+}
+
+"""
+Paginated result set for secrets queries.
+Provides a page of results along with the total count available.
+
+"""
+
+type SecretsPage {
+  "Array of secrets in the current page"
+  items: [Secret!]!
+  "Total number of secrets matching the query (across all pages)"
+  totalCount: Int!
+}
+
+"""
+Workload representing an application, service, or compute resource.
+Workloads may access secrets and are subject to security risk assessment.
+
+"""
+
+type Workload implements Entity {
+  "Unique identifier assigned by the system"
+  id: String!
+  "Unique identifier from the source system"
+  originId: String!
+  "Display name of the workload"
+  name: String!
+  "Source system or integration that provided this workload"
+  dataSourceType: DataSourceType
+  "Provider identifier within the source system"
+  providerId: String!
+  "Type of provider system (e.g., 'aws', 'azure', 'kubernetes')"
+  providerType: String!
+  "Type/category of workload (e.g., 'container', 'serverless', 'vm')"
+  type: String
+  "Optional subtype for further classification"
+  subType: String
+  "Human-readable description of the workload"
+  description: String
+  "Array of tags, annotations, and labels"
+  tags: [TagEntry]
+  "Whether the workload is managed by CyberArk"
+  managedByCyberArk: Boolean
+  "Additional metadata as JSON"
+  additionalData: AWSJSON
+  "Geographic or logical location of the workload"
+  location: String
+  "Last update timestamp in the system"
+  updatedAt: AWSDateTime
+  "Last update timestamp from the source system"
+  originUpdatedAt: AWSDateTime
+  "Creation timestamp from the source system"
+  originCreatedAt: AWSDateTime
+}
+
+"""
+AI agent or model that may access secrets or pose security risks.
+Represents AI/ML systems that require monitoring and risk assessment.
+
+"""
+
+type AiAgent implements Entity {
+  "Unique identifier assigned by the system"
+  id: String!
+  "Unique identifier from the source system"
+  originId: String!
+  "Display name of the AI agent"
+  name: String!
+  "Source system or integration that provided this AI agent"
+  dataSourceType: DataSourceType
+  "Provider identifier within the source system"
+  providerId: String!
+  "Type of provider system (e.g., 'aws', 'azure', 'kubernetes')"
+  providerType: String!
+  "Type/category of AI agent (e.g., 'llm', 'chatbot', 'automation')"
+  type: String
+  "Optional subtype for further classification"
+  subType: String
+  "Human-readable description of the AI agent"
+  description: String
+  "Instructions or prompt used by the AI agent"
+  instructions: String
+  "Array of tags, annotations, and labels"
+  tags: [TagEntry]
+  "Whether the AI agent is managed by CyberArk"
+  managedByCyberArk: Boolean
+  "Additional metadata as JSON"
+  additionalData: AWSJSON
+  "Geographic or logical location of the AI agent"
+  location: String
+  "Last update timestamp in the system"
+  updatedAt: AWSDateTime
+  "Last update timestamp from the source system"
+  originUpdatedAt: AWSDateTime
+  "Creation timestamp from the source system"
+  originCreatedAt: AWSDateTime
+}
+
+"""
+Paginated result set for workloads queries.
+Provides a page of results along with the total count available.
+
+"""
+
+type WorkloadPage {
+  "Array of workloads in the current page"
+  items: [Workload!]!
+  "Total number of workloads matching the query (across all pages)"
+  totalCount: Int!
+}
+
+"""
+Response from adding or replacing workloads.
+Contains the processed workloads and a count of total items processed.
+
+"""
+
+type AddReplaceWorkloadsResponse {
+  "Array of workloads that were added or updated"
+  workloads: [Workload!]!
+  "Total number of workloads processed in the operation"
+  totalProcessedWorkloads: Int!
+}
+
+"""
+Paginated result set for AI agents queries.
+Provides a page of results along with the total count available.
+
+"""
+
+type AiAgentPage {
+  "Array of AI agents in the current page"
+  items: [AiAgent!]!
+  "Total number of AI agents matching the query (across all pages)"
+  totalCount: Int!
+}
+
+"""
+Response from adding or replacing AI agents.
+Contains the processed AI agents and a count of total items processed.
+
+"""
+
+type AddReplaceAiAgentsResponse {
+  "Array of AI agents that were added or updated"
+  aiAgents: [AiAgent!]!
+  "Total number of AI agents processed in the operation"
+  totalProcessedAiAgents: Int!
+}
