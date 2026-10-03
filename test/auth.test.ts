@@ -186,6 +186,32 @@ describe('authentication disabled for local development', () => {
   });
 });
 
+describe('Idira Identity shaped authorization server', () => {
+  // The shape reported for Idira Identity apps: issuer https://<tenant>/<appId>/ (trailing slash),
+  // OpenID discovery only under that path, and a configured string (not a URL) as the audience.
+  let harness: Harness;
+  afterEach(() => harness.close());
+
+  it('discovers the issuer, advertises it unchanged and accepts only the configured audience', async () => {
+    harness = await startHarness({ OAUTH_AUDIENCE: 'idira-disco-mcp' }, { openIdOnly: true, issuerPath: '/discomcp', trailingSlash: true });
+    expect(harness.as.issuer.endsWith('/discomcp/')).toBe(true);
+
+    const response = await fetch(`${harness.origin}/.well-known/oauth-protected-resource/mcp`);
+    const metadata = (await response.json()) as Record<string, unknown>;
+    expect(metadata.authorization_servers).toEqual([harness.as.issuer]);
+
+    const client = await harness.connect(await harness.as.sign({ aud: 'idira-disco-mcp', sub: 'joe@example.com' }));
+    expect((await client.listTools()).tools).toHaveLength(9);
+
+    const wrongAudience = await fetch(harness.url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${await harness.token()}` },
+      body: '{}',
+    });
+    expect(wrongAudience.status).toBe(401);
+  });
+});
+
 describe('logger', () => {
   it('writes JSON lines at or above the configured level', () => {
     const lines: string[] = [];

@@ -4,7 +4,7 @@ An MCP server for the **Idira (CyberArk) Discovery & Context GraphQL API**. It l
 
 The server is a remote (Streamable HTTP) MCP server and an **OAuth 2.1 protected resource**, so it can be registered behind the **Idira Agent Identity Broker**: the agent authenticates to the broker, the broker obtains a token for this server, and every tool call is authorized and audited.
 
-> **Status.** All 9 operations of the public schema are implemented and covered by 176 automated tests, including a test that compares the server with the documented schema field by field, and a run with a real Claude Code client. It has **not yet been run against a live Idira tenant or a live Identity Broker** — see [What is and is not verified](#what-is-and-is-not-verified).
+> **Status.** All 9 operations of the public schema are implemented and covered by 177 automated tests, including a test that compares the server with the documented schema field by field, and a run with a real Claude Code client. It has **not yet been run against a live Idira tenant or a live Identity Broker** — see [What is and is not verified](#what-is-and-is-not-verified).
 
 ## Tools
 
@@ -90,7 +90,7 @@ All configuration is by environment variable; see [.env.example](.env.example). 
 ## Deploying behind the Idira Agent Identity Broker
 
 1. **Create the service user.** In Idira: *Manage > Inventory > Identities > Users > Add User*, tick *Is OAuth confidential client*, then add the user to the **Machines Admin** role. Its login name and password are `IDIRA_CLIENT_ID` / `IDIRA_CLIENT_SECRET`. ([Create an API token](https://api-docs.cyberark.com/create-api-token/docs/create-api-token), [Authenticate to the GraphQL API](https://docs.cyberark.com/manage/latest/en/content/disco/disco-authenticate-api.htm))
-2. **Choose the authorization server** that will issue tokens for this server. Any OAuth 2.1 server works if it publishes RFC 8414 or OpenID Connect discovery metadata and issues **JWT access tokens whose `aud` is `MCP_PUBLIC_URL`** (or whatever you set in `OAUTH_AUDIENCE`). Set `OAUTH_ISSUER_URL` to its issuer.
+2. **Choose the authorization server** that will issue tokens for this server. For Idira Identity, follow the step-by-step [integration guide](docs/INTEGRATION.md). Any OAuth 2.1 server works if it publishes RFC 8414 or OpenID Connect discovery metadata and issues **JWT access tokens whose `aud` is `MCP_PUBLIC_URL`** (or whatever you set in `OAUTH_AUDIENCE`). Set `OAUTH_ISSUER_URL` to its issuer.
 3. **Run the server** behind a TLS-terminating reverse proxy or ingress, reachable at `MCP_PUBLIC_URL`:
    ```bash
    npm ci && npm run build && npm start

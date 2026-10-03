@@ -34,9 +34,12 @@ function freePort(): Promise<number> {
   });
 }
 
-export async function startHarness(env: Record<string, string> = {}): Promise<Harness> {
+export async function startHarness(
+  env: Record<string, string> = {},
+  asOptions?: Parameters<typeof startMockAuthorizationServer>[0],
+): Promise<Harness> {
   const idira = await startMockIdira();
-  const as = await startMockAuthorizationServer();
+  const as = await startMockAuthorizationServer(asOptions);
   const port = await freePort();
   const url = `http://localhost:${port}/mcp`;
 

@@ -22,7 +22,7 @@ export interface MockAuthorizationServer {
 
 /** A minimal OAuth 2.1 authorization server: RFC 8414 metadata, a JWKS, and a token mint for tests. */
 export async function startMockAuthorizationServer(
-  options: { openIdOnly?: boolean; issuerPath?: string; omitJwksUri?: boolean } = {},
+  options: { openIdOnly?: boolean; issuerPath?: string; omitJwksUri?: boolean; trailingSlash?: boolean } = {},
 ): Promise<MockAuthorizationServer> {
   const { publicKey, privateKey } = await generateKeyPair('RS256');
   const foreign = await generateKeyPair('RS256');
@@ -75,7 +75,7 @@ export async function startMockAuthorizationServer(
 
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const { port } = server.address() as AddressInfo;
-  mock.issuer = `http://localhost:${port}${issuerPath}`;
+  mock.issuer = `http://localhost:${port}${issuerPath}${options.trailingSlash ? '/' : ''}`;
   mock.jwksUri = `http://localhost:${port}/jwks`;
   return mock;
 }
